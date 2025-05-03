@@ -149,7 +149,9 @@
             height: 12px;
         }
 
-        .calendar .empty {
+        .calendar .empty
+
+System: {
             background-color: transparent;
             border: none;
         }
@@ -204,24 +206,24 @@
             align-items: center;
             gap: 10px;
             margin-bottom: 10px;
-            border: none; /* Menghilangkan border */
-            background: transparent; /* Membuat background transparan */
+            border: none;
+            background: transparent;
         }
 
         .todo-item input[type="text"] {
             border: none;
             background: transparent;
-            font-size: 16px; /* Ukuran teks lebih besar */
+            font-size: 16px;
             width: 100%;
         }
 
         .todo-item input[type="text"]:focus {
             outline: none;
-            border-bottom: 1px solid #ccc; /* Garis bawah saat edit */
+            border-bottom: 1px solid #ccc;
         }
 
         .todo-item .completed {
-            text-decoration: line-through; /* Efek coret saat checkbox dicentang */
+            text-decoration: line-through;
             color: #888;
         }
 
@@ -230,18 +232,18 @@
         }
 
         .add-todo-section {
-            display: none; /* Sembunyikan secara default */
+            display: none;
             gap: 10px;
             margin-top: 10px;
             width: 100%;
         }
 
         .modal-header:hover .add-todo-section {
-            display: flex; /* Tampilkan saat hover pada modal-header */
+            display: flex;
         }
 
         .add-todo-section input {
-            font-size: 14px; /* Ukuran input lebih kecil */
+            font-size: 14px;
         }
 
         .add-todo-section button {
@@ -249,13 +251,11 @@
             padding: 5px 10px;
         }
 
-        /* Menggeser tombol close (X) */
         .modal-header .btn-close {
-            margin-right: 6px; /* Memberikan jarak dari tepi kanan */
+            margin-right: 6px;
             margin-top: 5px;
         }
 
-        /* Menyesuaikan layout header */
         .modal-header {
             flex-direction: column;
             align-items: flex-start;
@@ -285,8 +285,8 @@
 
         <!-- Navigation Buttons -->
         <div class="nav-buttons">
-            <button onclick="showSlide(0)"><< 2025</button>
-            <button onclick="showSlide(1)">2026 >></button>
+            <button onclick="showSlide(0)">&lt;&lt; 2025</button>
+            <button onclick="showSlide(1)">2026 &gt;&gt;</button>
         </div>
 
         <!-- Slides for Calendar Years -->
@@ -311,6 +311,21 @@
                 </div>
             </div>
         </div>
+
+        <!-- Bootstrap Modal for Special Tasks on the 17th -->
+        <div class="modal fade" id="specialTasksModal" tabindex="-1" aria-labelledby="specialTasksModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="specialTasksModalLabel">Tugas Tanggal 17</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <ul id="specialTasksList" class="list-unstyled todo-list"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Bootstrap 5 JS and Popper.js -->
@@ -322,7 +337,7 @@
         const endDate = new Date('2026-03-10');
         const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
         const totalSavings = totalDays * 20;
-        const specialDate = '2026-03-10'; // Date for the modal
+        const specialDate = '2026-03-10'; // Date for the main to-do modal
 
         // Function to generate calendar for a given year
         function generateCalendar(year, containerId, startMonth, endMonth, checkboxStart, checkboxEnd) {
@@ -408,14 +423,56 @@
             return classes[month - 1];
         }
 
+        // Special tasks for the 17th
+        const specialTasks = [
+            { text: 'Cek buku Gramedia & Mizan', completed: false },
+            { text: 'Cek sundul shopee di Bigseller', completed: false }
+        ];
+
+        // Function to render special tasks
+        function renderSpecialTasks(dateStr) {
+            const specialTasksList = document.getElementById('specialTasksList');
+            specialTasksList.innerHTML = '';
+            specialTasks.forEach((task, index) => {
+                const li = document.createElement('li');
+                li.className = 'todo-item';
+                li.innerHTML = `
+                    <input type="checkbox" ${task.completed ? 'checked' : ''} onchange="toggleSpecialTask(${index}, '${dateStr}')">
+                    <input type="text" value="${task.text}" class="${task.completed ? 'completed' : ''}" readonly>
+                `;
+                specialTasksList.appendChild(li);
+            });
+        }
+
+        // Function to toggle special task completion
+        function toggleSpecialTask(index, dateStr) {
+            specialTasks[index].completed = !specialTasks[index].completed;
+            localStorage.setItem(`specialTasks_${dateStr}`, JSON.stringify(specialTasks));
+            renderSpecialTasks(dateStr);
+        }
+
         // Function to handle checkbox changes
         function handleCheckbox(dateStr) {
             const checkbox = document.getElementById(dateStr);
             localStorage.setItem(dateStr, checkbox.checked);
             if (checkbox.checked) {
                 if (dateStr === specialDate) {
-                    // Show modal on March 10, 2026
+                    // Show main to-do modal on March 10, 2026
                     const modal = new bootstrap.Modal(document.getElementById('todoModal'));
+                    modal.show();
+                } else if (dateStr.endsWith('-17')) {
+                    // Load special tasks state for this date
+                    const savedTasks = localStorage.getItem(`specialTasks_${dateStr}`);
+                    if (savedTasks) {
+                        specialTasks.forEach((task, index) => {
+                            task.completed = JSON.parse(savedTasks)[index].completed;
+                        });
+                    } else {
+                        specialTasks.forEach(task => task.completed = false);
+                    }
+                    renderSpecialTasks(dateStr);
+                    // Show special tasks modal on the 17th
+                    const modal = new bootstrap.Modal(document.getElementById('specialTasksModal'));
                     modal.show();
                 } else {
                     alert('Anda sudah menabung 20rb.');
@@ -448,7 +505,7 @@
             });
         }
 
-        // To-Do List Functions
+        // To-Do List Functions for March 10, 2026 Modal
         let todos = JSON.parse(localStorage.getItem('todos')) || [];
 
         function renderTodos() {
@@ -480,7 +537,7 @@
         function editTodo(index, newText) {
             todos[index].text = newText.trim();
             if (todos[index].text === '') {
-                deleteTodo(index); // Hapus jika teks kosong setelah edit
+                deleteTodo(index);
             } else {
                 localStorage.setItem('todos', JSON.stringify(todos));
                 renderTodos();
